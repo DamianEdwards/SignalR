@@ -6,6 +6,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipelines;
+using System.Security.Claims;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,6 +36,12 @@ namespace Microsoft.AspNetCore.Sockets
 
         public async Task ExecuteAsync<TEndPoint>(string path, HttpContext context) where TEndPoint : EndPoint
         {
+            var name = context.Request.Query["name"];
+            if (!string.IsNullOrEmpty(name))
+            {
+                context.User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, name) }));
+            }
+
             var options = context.RequestServices.GetRequiredService<IOptions<EndPointOptions<TEndPoint>>>().Value;
             // TODO: Authorize attribute on EndPoint
             if (!await AuthorizeHelper.AuthorizeAsync(context, options.AuthorizationPolicyNames))

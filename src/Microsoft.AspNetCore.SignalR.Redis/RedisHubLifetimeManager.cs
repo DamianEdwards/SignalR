@@ -136,8 +136,7 @@ namespace Microsoft.AspNetCore.SignalR.Redis
                 previousConnectionTask = WriteAsync(connection, data);
             });
 
-
-            if (connection.User.Identity.IsAuthenticated)
+            if (connection.User.Identity.IsAuthenticated || !string.IsNullOrEmpty(connection.User.Identity.Name))
             {
                 var userChannel = typeof(THub).FullName + ".user." + connection.User.Identity.Name;
                 redisSubscriptions.Add(userChannel);

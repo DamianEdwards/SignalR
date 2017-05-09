@@ -18,7 +18,7 @@ namespace ChatSample.Hubs
 
         public override async Task OnConnectedAsync()
         {
-            if (!Context.User.Identity.IsAuthenticated)
+            if (string.IsNullOrEmpty(Context.User.Identity.Name))
             {
                 Context.Connection.Dispose();
                 return;
