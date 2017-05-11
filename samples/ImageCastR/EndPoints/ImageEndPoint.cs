@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ImageSharp;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Sockets;
 
 namespace ImageCastR.EndPoints
@@ -33,7 +30,6 @@ namespace ImageCastR.EndPoints
                             {
                                 var output = new MemoryStream();
                                 var result = image.Resize(image.Width / 5, image.Height / 5)
-                                     .Grayscale()
                                      .Save(output);
 
                                 foreach (var c in Connections)
@@ -41,12 +37,13 @@ namespace ImageCastR.EndPoints
                                     if (string.Equals(c.Metadata.Get<string>("format"), "ascii"))
                                     {
                                         var sb = new StringBuilder();
-                                        for (int i = 0; i < result.Pixels.Length; i++)
+                                        var grayScale = result.Grayscale();
+                                        for (int i = 0; i < grayScale.Pixels.Length; i++)
                                         {
-                                            var pixel = result.Pixels[i];
-                                            var ch = GetChar(pixel);
+                                            var pixel = grayScale.Pixels[i];
+                                            var ch = ToAscii(pixel.R);
                                             sb.Append(ch);
-                                            if (i % result.Width == 0)
+                                            if (i > 0 && i % result.Width == 0)
                                             {
                                                 sb.AppendLine();
                                             }
@@ -74,17 +71,37 @@ namespace ImageCastR.EndPoints
             }
         }
 
-        private char GetChar(Rgba32 pixelColor)
+        private const char Black = '#';
+        private const char Medium = '&';
+        private const char MediumLight = '*';
+        private const char Light = '.';
+        private const char White = ' ';
+
+        private static char ToAscii(int pixelValue)
         {
-            char[] asciiChars = { '#', '#', '@', '%', '=', '+', '*', ':', '-', '.', ' ' };
+            char asciiSymbol;
 
-            int red = (pixelColor.R + pixelColor.G + pixelColor.B) / 3;
-            int green = (pixelColor.R + pixelColor.G + pixelColor.B) / 3;
-            int blue = (pixelColor.R + pixelColor.G + pixelColor.B) / 3;
-            var gray = new Rgba32(red, green, blue);
-            int index = (gray.R * 10) / 255;
-
-            return asciiChars[index];
+            if (pixelValue >= 200)
+            {
+                asciiSymbol = White;
+            }
+            else if (pixelValue >= 150)
+            {
+                asciiSymbol = Light;
+            }
+            else if (pixelValue >= 100)
+            {
+                asciiSymbol = MediumLight;
+            }
+            else if (pixelValue >= 50)
+            {
+                asciiSymbol = Medium;
+            }
+            else
+            {
+                asciiSymbol = Black;
+            }
+            return asciiSymbol;
         }
     }
 }
