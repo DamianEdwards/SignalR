@@ -12,6 +12,7 @@ namespace ClientSample
     {
         public static void Main(string[] args)
         {
+            Console.ReadKey();
             if (args.Contains("--debug"))
             {
                 Console.WriteLine($"Ready for debugger to attach. Process ID: {Process.GetCurrentProcess().Id}");

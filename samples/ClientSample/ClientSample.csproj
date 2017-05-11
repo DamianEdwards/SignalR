@@ -1,9 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\build\dependencies.props" />
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
+    <OutputType>Exe</OutputType>
     <!-- Don't create a NuGet package -->
     <IsPackable>false</IsPackable>
   </PropertyGroup>
@@ -13,10 +14,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="ImageSharp" Version="1.0.0-alpha9-00025" />
     <PackageReference Include="System.Net.WebSockets.Client" Version="$(CoreFxVersion)" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="$(AspNetCoreVersion)" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="$(AspNetCoreVersion)" />
     <PackageReference Include="Microsoft.Extensions.CommandLineUtils.Sources" Version="$(AspNetCoreVersion)" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\" />
   </ItemGroup>
 
 </Project>

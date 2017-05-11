@@ -31,7 +31,7 @@ namespace ClientSample
 
         public static async Task<int> ExecuteAsync(string baseUrl)
         {
-            baseUrl = string.IsNullOrEmpty(baseUrl) ? "http://localhost:5000/chat" : baseUrl;
+            baseUrl = string.IsNullOrEmpty(baseUrl) ? "http://localhost:5000/image?format=ascii" : baseUrl;
 
             var loggerFactory = new LoggerFactory();
             var logger = loggerFactory.CreateLogger<Program>();
@@ -41,7 +41,10 @@ namespace ClientSample
             try
             {
                 var cts = new CancellationTokenSource();
-                connection.Received += (data, format) => Console.WriteLine($"{Encoding.UTF8.GetString(data)}");
+                connection.Received += (data, format) =>
+                {
+                    Console.WriteLine(Encoding.ASCII.GetString(data));
+                };
                 connection.Closed += e => cts.Cancel();
 
                 await connection.StartAsync();

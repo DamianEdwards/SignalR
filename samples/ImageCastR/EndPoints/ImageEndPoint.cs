@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ImageSharp;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Sockets;
 
 namespace ImageCastR.EndPoints
@@ -28,14 +29,37 @@ namespace ImageCastR.EndPoints
 
                         if (message.EndOfMessage)
                         {
-                            using (var image = Image.Load(new MemoryStream(data.ToArray())))
+                            using (var image = Image.Load(data.ToArray()))
                             {
                                 var output = new MemoryStream();
-                                image.Resize(image.Width / 2, image.Height / 2)
+                                var result = image.Resize(image.Width / 5, image.Height / 5)
                                      .Grayscale()
                                      .Save(output);
 
-                                await Broadcast(output.ToArray(), MessageType.Binary, endOfMessage: true);
+                                foreach (var c in Connections)
+                                {
+                                    if (string.Equals(c.Metadata.Get<string>("format"), "ascii"))
+                                    {
+                                        var sb = new StringBuilder();
+                                        for (int i = 0; i < result.Pixels.Length; i++)
+                                        {
+                                            var pixel = result.Pixels[i];
+                                            var ch = GetChar(pixel);
+                                            sb.Append(ch);
+                                            if (i % result.Width == 0)
+                                            {
+                                                sb.AppendLine();
+                                            }
+                                        }
+                                        var ascii = Encoding.ASCII.GetBytes(sb.ToString());
+
+                                        await c.Transport.Output.WriteAsync(new Message(ascii, MessageType.Text));
+                                    }
+                                    else
+                                    {
+                                        await c.Transport.Output.WriteAsync(new Message(output.ToArray(), MessageType.Binary));
+                                    }
+                                }
                             }
 
                             data.Clear();
@@ -50,23 +74,17 @@ namespace ImageCastR.EndPoints
             }
         }
 
-        private Task Broadcast(string text)
+        private char GetChar(Rgba32 pixelColor)
         {
-            return Broadcast(Encoding.UTF8.GetBytes(text), MessageType.Text, endOfMessage: true);
-        }
+            char[] asciiChars = { '#', '#', '@', '%', '=', '+', '*', ':', '-', '.', ' ' };
 
-        private Task Broadcast(byte[] payload, MessageType format, bool endOfMessage)
-        {
-            var tasks = new List<Task>(Connections.Count);
+            int red = (pixelColor.R + pixelColor.G + pixelColor.B) / 3;
+            int green = (pixelColor.R + pixelColor.G + pixelColor.B) / 3;
+            int blue = (pixelColor.R + pixelColor.G + pixelColor.B) / 3;
+            var gray = new Rgba32(red, green, blue);
+            int index = (gray.R * 10) / 255;
 
-            foreach (var c in Connections)
-            {
-                tasks.Add(c.Transport.Output.WriteAsync(new Message(
-                    payload,
-                    format,
-                    endOfMessage)));
-            }
-            return Task.WhenAll(tasks);
+            return asciiChars[index];
         }
     }
 }

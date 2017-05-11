@@ -238,6 +238,7 @@ namespace Microsoft.AspNetCore.Sockets
             var formatType = (string)context.Request.Query["formatType"];
             state.Connection.Metadata["formatType"] = string.IsNullOrEmpty(formatType) ? "json" : formatType;
             state.Connection.Metadata[typeof(HttpContext)] = context;
+            state.Connection.Metadata["format"] = (string)context.Request.Query["format"];
 
             return state;
         }
