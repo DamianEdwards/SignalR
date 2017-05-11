@@ -37,7 +37,7 @@
     <input type="submit" name="Send" value="Send" />
 </form>
 
-<ul id="photo-list"></ul>
+<img id="other-photo" />
 
 <script src="~/lib/signalr-client/signalr-client.js"></script>
 
@@ -117,32 +117,21 @@
     let connection = new signalR.Connection(url);
 
     connection.onDataReceived = data => {
-       let child = document.createElement('li');
-       var objectUrl = URL.createObjectURL(data);
-       var newCanvas = document.createElement('canvas');
-       newCanvas.width = 500;
-       newCanvas.height = 375;
-       var ctx = newCanvas.getContext("2d");
-       var imageData = ctx.createImageData(1000, 1000);
-       var reader = new FileReader();
-       reader.onload = function (event) {
-           imageData.data.set(new Uint8ClampedArray(reader.result));
-           ctx.putImageData(imageData, 0, 0);
-           child.appendChild(newCanvas);
-           document.getElementById('photo-list').appendChild(child);
-       };
-       reader.readAsArrayBuffer(data);
+        var img = document.getElementById('other-photo');
+        img.setAttribute('src', URL.createObjectURL(data));
     };
 
     connection.start();
 
     document.getElementById('photo').addEventListener('submit', event => {
         var canvas = document.getElementById('canvas');
-        var ctx = canvas.getContext('2d');
-        var imageData = ctx.getImageData(0,0,1000,1000);
-        var buffer = imageData.data.buffer;  // ArrayBuffer
-        console.log(buffer);
-        connection.send(buffer);
+        var png = canvas.toBlob(function (blob) {
+            var reader = new FileReader();
+            reader.onload = function (event) {
+                connection.send(reader.result);
+            };
+            reader.readAsArrayBuffer(blob);
+        });
         event.preventDefault();
     });
 </script>

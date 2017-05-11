@@ -19,6 +19,7 @@
   </Target>
 
   <ItemGroup>
+    <PackageReference Include="ImageSharp" Version="1.0.0-alpha9-00025" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="$(AspNetCoreVersion)" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics" Version="$(AspNetCoreVersion)" />
     <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="$(AspNetCoreVersion)" />

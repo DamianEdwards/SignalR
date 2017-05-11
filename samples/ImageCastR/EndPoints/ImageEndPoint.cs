@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ImageSharp;
 using Microsoft.AspNetCore.Sockets;
 
 namespace ImageCastR.EndPoints
@@ -17,14 +19,30 @@ namespace ImageCastR.EndPoints
 
             try
             {
+                var data = new List<byte>();
                 while (await connection.Transport.Input.WaitToReadAsync())
                 {
-                    Message message;
-                    if (connection.Transport.Input.TryRead(out message))
+                    while (connection.Transport.Input.TryRead(out var message))
                     {
-                        await Broadcast(message.Payload, message.Type, message.EndOfMessage);
+                        data.AddRange(message.Payload);
+
+                        if (message.EndOfMessage)
+                        {
+                            using (var image = Image.Load(new MemoryStream(data.ToArray())))
+                            {
+                                var output = new MemoryStream();
+                                image.Resize(image.Width / 2, image.Height / 2)
+                                     .Grayscale()
+                                     .Save(output);
+
+                                await Broadcast(output.ToArray(), MessageType.Binary, endOfMessage: true);
+                            }
+
+                            data.Clear();
+                        }
                     }
                 }
+
             }
             finally
             {
