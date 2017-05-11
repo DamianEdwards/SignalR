@@ -36,12 +36,6 @@ namespace Microsoft.AspNetCore.Sockets
 
         public async Task ExecuteAsync<TEndPoint>(string path, HttpContext context) where TEndPoint : EndPoint
         {
-            var name = context.Request.Query["name"];
-            if (!string.IsNullOrEmpty(name))
-            {
-                context.User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, name) }));
-            }
-
             var options = context.RequestServices.GetRequiredService<IOptions<EndPointOptions<TEndPoint>>>().Value;
             // TODO: Authorize attribute on EndPoint
             if (!await AuthorizeHelper.AuthorizeAsync(context, options.AuthorizationPolicyNames))

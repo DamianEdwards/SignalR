@@ -18,15 +18,34 @@ using StackExchange.Redis;
 
 namespace ChatSample
 {
+    public interface IServerId
+    {
+        string Id { get; }
+    }
+
+    public class ServerId : IServerId
+    {
+        public ServerId(string id)
+        {
+            Id = id;
+        }
+        public string Id { get; }
+
+        public override string ToString()
+        {
+            return Id;
+        }
+    }
+
     public class RedisUserTracker<THub> : IUserTracker<THub>, IDisposable
     {
-        private readonly string ServerId = $"server:{Guid.NewGuid().ToString("D")}";
+        private readonly string ServerId;
         private readonly RedisKey ServerIndexRedisKey = "ServerIndex";
         private readonly RedisKey LastSeenRedisKey;
         private readonly RedisKey UserIndexRedisKey;
 
-        private const int ScanInterval = 5; //seconds
-        private const int ServerInactivityTimeout = 30; // seconds
+        private const int ScanInterval = 1; //seconds
+        private const int ServerInactivityTimeout = 5; // seconds
 
         private readonly ConnectionMultiplexer _redisConnection;
         private readonly IDatabase _redisDatabase;
@@ -50,8 +69,9 @@ namespace ChatSample
         public event Action<UserDetails[]> UsersJoined;
         public event Action<UserDetails[]> UsersLeft;
 
-        public RedisUserTracker(IOptions<RedisOptions> options, ILoggerFactory loggerFactory)
+        public RedisUserTracker(IServerId serverId, IOptions<RedisOptions> options, ILoggerFactory loggerFactory)
         {
+            ServerId = $"server:{serverId.Id}";
             LastSeenRedisKey = $"{ServerId}:last-seen";
             UserIndexRedisKey = $"{ServerId}:users";
             _users = new HashSet<UserDetails>(_userEqualityComparer);

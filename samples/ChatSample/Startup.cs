@@ -5,6 +5,8 @@ using ChatSample.Data;
 using ChatSample.Hubs;
 using ChatSample.Models;
 using ChatSample.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -18,7 +20,7 @@ namespace ChatSample
 {
     public class Startup
     {
-        public Startup(IHostingEnvironment env)
+        public Startup(IHostingEnvironment env, IServerId serverId)
         {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
@@ -33,15 +35,15 @@ namespace ChatSample
 
             builder.AddEnvironmentVariables();
             Configuration = builder.Build();
+            ServerId = serverId;
         }
 
         public IConfigurationRoot Configuration { get; }
+        public IServerId ServerId { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
-System.Console.WriteLine(Configuration.GetConnectionString("DefaultConnection"));
             // Add framework services.
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
@@ -60,7 +62,18 @@ System.Console.WriteLine(Configuration.GetConnectionString("DefaultConnection"))
             services.AddSignalR()
                  .AddRedis()
                 ;
-            services.AddAuthentication();
+
+            services.AddAuthentication(o =>
+            {
+                o.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                o.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                o.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            });
+
+            services.AddCookieAuthentication(o =>
+            {
+                o.CookieName = $"Cookies_{ServerId.Id}";
+            });
 
 
             //services.AddSingleton(typeof(DefaultHubLifetimeManager<>), typeof(DefaultHubLifetimeManager<>));
