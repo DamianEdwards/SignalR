@@ -23,13 +23,13 @@ namespace SocketsSample.EndPoints
             {
                 while (await connection.Transport.Input.WaitToReadAsync())
                 {
-                    Message message;
-                    if (connection.Transport.Input.TryRead(out message))
+                    if (connection.Transport.Input.TryRead(out var message))
                     {
                         // We can avoid the copy here but we'll deal with that later
                         var text = Encoding.UTF8.GetString(message.Payload);
                         text = $"{connection.ConnectionId}: {text}";
-                        await Broadcast(Encoding.UTF8.GetBytes(text), message.Type, message.EndOfMessage);
+                        await Broadcast(Encoding.UTF8.GetBytes(text), MessageType.Text, message.EndOfMessage);
+
                     }
                 }
             }

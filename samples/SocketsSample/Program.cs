@@ -22,6 +22,7 @@ namespace SocketsSample
                 {
                     factory.AddConsole();
                 })
+                .UseUrls("http://*:5000")
                 .UseKestrel()
                 .UseContentRoot(Directory.GetCurrentDirectory())
                 .UseIISIntegration()
