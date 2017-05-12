@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.SignalR.Redis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Primitives;
 
 namespace ChatSample
 {
@@ -75,7 +76,6 @@ namespace ChatSample
                 o.CookieName = $"Cookies_{ServerId.Id}";
             });
 
-
             //services.AddSingleton(typeof(DefaultHubLifetimeManager<>), typeof(DefaultHubLifetimeManager<>));
             //services.AddSingleton(typeof(HubLifetimeManager<>), typeof(DefaultPresenceHublifetimeMenager<>));
             //services.AddSingleton(typeof(IUserTracker<>), typeof(InMemoryUserTracker<>));
@@ -86,7 +86,7 @@ namespace ChatSample
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, UserCreator userCreator)
         {
             if (env.IsDevelopment())
             {
@@ -97,6 +97,16 @@ namespace ChatSample
             {
                 app.UseExceptionHandler("/Home/Error");
             }
+
+            app.Use(async (context, next) =>
+            {
+                // Assume non browser client so generate a user
+                if (StringValues.IsNullOrEmpty(context.Request.Headers["User-Agent"]))
+                {
+                    context.User = userCreator.GetNextUser();
+                }
+                await next();
+            });
 
             app.UseStaticFiles();
 

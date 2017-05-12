@@ -1,6 +1,7 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading;
@@ -21,13 +22,12 @@ namespace ChatSample.Controllers
     [Authorize]
     public class AccountController : Controller
     {
-        private static int _id;
 
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IEmailSender _emailSender;
         private readonly ISmsSender _smsSender;
-        private readonly IServerId _serverId;
+        private readonly UserCreator _userCreator;
         private readonly ILogger _logger;
 
         public AccountController(
@@ -35,14 +35,14 @@ namespace ChatSample.Controllers
             SignInManager<ApplicationUser> signInManager,
             IEmailSender emailSender,
             ISmsSender smsSender,
-            IServerId serverId,
+            UserCreator userCreator,
             ILoggerFactory loggerFactory)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _emailSender = emailSender;
             _smsSender = smsSender;
-            _serverId = serverId;
+            _userCreator = userCreator;
             _logger = loggerFactory.CreateLogger<AccountController>();
         }
 
@@ -52,12 +52,9 @@ namespace ChatSample.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Login(string returnUrl = null)
         {
-            int id = Interlocked.Increment(ref _id);
-            var claimsIdentity = new ClaimsIdentity(CookieAuthenticationDefaults.AuthenticationScheme);
-            claimsIdentity.AddClaim(new Claim(ClaimTypes.NameIdentifier, $"user_id{_serverId.Id}_{id}"));
-            claimsIdentity.AddClaim(new Claim(ClaimTypes.Name, $"user_name_{_serverId.Id}_{id}"));
+            var user = _userCreator.GetNextUser();
 
-            await HttpContext.SignInAsync(new ClaimsPrincipal(claimsIdentity));
+            await HttpContext.SignInAsync(user);
 
             return RedirectToLocal(returnUrl);
         }

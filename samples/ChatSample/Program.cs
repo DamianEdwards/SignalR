@@ -3,6 +3,9 @@
 
 using System;
 using System.IO;
+using System.Security.Claims;
+using System.Threading;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -41,6 +44,7 @@ namespace ChatSample
                 .ConfigureServices(services =>
                 {
                     services.AddSingleton<IServerId>(id);
+                    services.AddSingleton<UserCreator>();
                 })
                 .UseUrls($"http://*:{port}")
                 .UseKestrel()
@@ -52,6 +56,45 @@ namespace ChatSample
             Console.WriteLine($"SERVER INSTANCE: {id}");
 
             host.Run();
+        }
+    }
+
+    public interface IServerId
+    {
+        string Id { get; }
+    }
+
+    public class ServerId : IServerId
+    {
+        public ServerId(string id)
+        {
+            Id = id;
+        }
+        public string Id { get; }
+
+        public override string ToString()
+        {
+            return Id;
+        }
+    }
+
+    public class UserCreator
+    {
+        private static int _id;
+        private readonly IServerId _serverId;
+
+        public UserCreator(IServerId serverId)
+        {
+            _serverId = serverId;
+        }
+
+        public ClaimsPrincipal GetNextUser()
+        {
+            int id = Interlocked.Increment(ref _id);
+            var claimsIdentity = new ClaimsIdentity(CookieAuthenticationDefaults.AuthenticationScheme);
+            claimsIdentity.AddClaim(new Claim(ClaimTypes.NameIdentifier, $"user_id{_serverId.Id}_{id}"));
+            claimsIdentity.AddClaim(new Claim(ClaimTypes.Name, $"user_name_{_serverId.Id}_{id}"));
+            return new ClaimsPrincipal(claimsIdentity);
         }
     }
 }

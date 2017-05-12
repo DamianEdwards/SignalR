@@ -18,25 +18,6 @@ using StackExchange.Redis;
 
 namespace ChatSample
 {
-    public interface IServerId
-    {
-        string Id { get; }
-    }
-
-    public class ServerId : IServerId
-    {
-        public ServerId(string id)
-        {
-            Id = id;
-        }
-        public string Id { get; }
-
-        public override string ToString()
-        {
-            return Id;
-        }
-    }
-
     public class RedisUserTracker<THub> : IUserTracker<THub>, IDisposable
     {
         private readonly string ServerId;
