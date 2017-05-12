@@ -43,7 +43,7 @@ namespace ClientSample
                 var cts = new CancellationTokenSource();
                 connection.Received += (data, format) =>
                 {
-                    Console.Clear();
+                    Console.SetCursorPosition(0, 0);
                     Console.WriteLine(Encoding.ASCII.GetString(data));
                 };
                 connection.Closed += e => cts.Cancel();

@@ -28,22 +28,18 @@ namespace ImageCastR.EndPoints
                         {
                             using (var image = Image.Load(data.ToArray()))
                             {
-                                var output = new MemoryStream();
-                                var result = image.Resize(image.Width / 5, image.Height / 5)
-                                     .Save(output);
-
                                 foreach (var c in Connections)
                                 {
                                     if (string.Equals(c.Metadata.Get<string>("format"), "ascii"))
                                     {
                                         var sb = new StringBuilder();
-                                        var grayScale = result.Grayscale();
+                                        var grayScale = image.Resize(100, 30).Grayscale();
                                         for (int i = 0; i < grayScale.Pixels.Length; i++)
                                         {
                                             var pixel = grayScale.Pixels[i];
                                             var ch = ToAscii(pixel.R);
                                             sb.Append(ch);
-                                            if (i > 0 && i % result.Width == 0)
+                                            if (i > 0 && i % grayScale.Width == 0)
                                             {
                                                 sb.AppendLine();
                                             }
@@ -54,7 +50,7 @@ namespace ImageCastR.EndPoints
                                     }
                                     else
                                     {
-                                        await c.Transport.Output.WriteAsync(new Message(output.ToArray(), MessageType.Binary));
+                                        await c.Transport.Output.WriteAsync(new Message(data.ToArray(), MessageType.Binary));
                                     }
                                 }
                             }

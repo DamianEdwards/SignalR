@@ -30,12 +30,8 @@
     <video id="video"></video>
     <canvas id="canvas" style="display:none;"></canvas>
 </div>
-<div id="buttoncontent"></div>
-<button id="startbutton">CAPTURE</button>
-
-<form id="photo">
-    <input type="submit" name="Send" value="Send" />
-</form>
+<input type="text" id="capture-rate" value="1000" />
+<button id="capture">Capture</button>
 
 <img id="other-photo" />
 
@@ -47,9 +43,10 @@
         var streaming = false,
             video = document.querySelector('#video'),
             canvas = document.querySelector('#canvas'),
-            buttoncontent = document.querySelector('#buttoncontent'),
             photo = document.querySelector('#photo'),
-            startbutton = document.querySelector('#startbutton'),
+            capture = document.querySelector('#capture'),
+            captureRate = document.querySelector('#capture-rate'),
+            captureInterval = null,
             width = 500,
             height = 0;
 
@@ -87,52 +84,50 @@
             }
         }, false);
 
-        function takepicture() {
-            video.style.display = "none";
-            canvas.style.display = "block";
-            startbutton.innerText = "RETAKE";
+        function captureAndSend() {
+            canvas.style.display = "none";
             canvas.width = width;
             canvas.height = height;
             canvas.getContext('2d').drawImage(video, 0, 0, width, height);
-            var data = canvas.toDataURL('image/png');
-            photo.setAttribute('src', data);
+            var png = canvas.toBlob(function (blob) {
+                var reader = new FileReader();
+                reader.onload = function (event) {
+                    connection.send(reader.result);
+                };
+                reader.readAsArrayBuffer(blob);
+            });
         }
 
-        startbutton.addEventListener('click', function (ev) {
-            if (startbutton.innerText === "CAPTURE") {
-                takepicture();
+        let url = `http://${document.location.host}/image`
+
+        let connection = new signalR.Connection(url);
+
+        connection.onDataReceived = data => {
+            var img = document.getElementById('other-photo');
+            img.setAttribute('src', URL.createObjectURL(data));
+        };
+
+        connection.start();
+
+        capture.addEventListener('click', event => {
+            if (captureInterval) {
+                clearInterval(captureInterval);
+                captureInterval = null;
+                capture.innerHTML = 'Start Capturing';
             }
             else {
-                video.style.display = "block";
-                canvas.style.display = "none";
-                startbutton.innerText = "CAPTURE";
-            }
-            ev.preventDefault();
-        }, false);
+                var rate = captureRate ? parseInt(captureRate.value) : 1000;
 
+                captureInterval = setInterval(() => {
+                    captureAndSend();
+                }, rate);
+
+                capture.innerHTML = 'Stop Capturing';
+            }
+
+            event.preventDefault();
+        });
     })();
 
-    let url = `http://${document.location.host}/image`
-
-    let connection = new signalR.Connection(url);
-
-    connection.onDataReceived = data => {
-        var img = document.getElementById('other-photo');
-        img.setAttribute('src', URL.createObjectURL(data));
-    };
-
-    connection.start();
-
-    document.getElementById('photo').addEventListener('submit', event => {
-        var canvas = document.getElementById('canvas');
-        var png = canvas.toBlob(function (blob) {
-            var reader = new FileReader();
-            reader.onload = function (event) {
-                connection.send(reader.result);
-            };
-            reader.readAsArrayBuffer(blob);
-        });
-        event.preventDefault();
-    });
 </script>
 </html>
